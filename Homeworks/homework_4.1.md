@@ -61,13 +61,15 @@ done
 
 ### Ваш скрипт:
 ```bash
+array_int=(1 2 3 4 5)
 array_str=("192.168.0.1" "173.194.222.113" "87.250.250.242")
-for var1 in 1 2 3 4 5
+for i in ${array_int[@]}
 do
-  nc -vzw5 $array_str 80
-  nc -vzw5 ${array_str[1]} 80
-  nc -vzw5 ${array_str[2]} 80
-done 2> log.txt  
+  for var1 in ${array_str[@]}
+  do
+    nc -vzw5 $var1 80
+  done
+done 2> log.txt
 ```
 
 ## Обязательная задача 4
@@ -78,24 +80,15 @@ done 2> log.txt
 array_str=("192.168.0.1" "173.194.222.113" "87.250.250.242")
 while :
 do
-  nc -vzw5 $array_str 80
-  if (($? != 0))
-  then
-    echo $array_str > error.txt
-    break
-  fi
-  nc -vzw5 ${array_str[1]} 80
-  if (($? != 0))
-  then
-    echo ${array_str[1]} > error.txt
-    break
-  fi
-  nc -vzw5 ${array_str[2]} 80
-  if (($? != 0))
-  then
-    echo ${array_str[2]} > error.txt
-    break
-  fi
+  for var1 in ${array_str[@]}
+  do
+    nc -vzw5 $var1 80
+    if (($? != 0))
+    then
+      echo $var1 > error.txt
+      break 2
+    fi
+  done
 done 2> log.txt
 ```
 
