@@ -1,0 +1,207 @@
+---
+- name: Installing NGINX
+  become: yes
+  apt:
+    name=nginx
+    state=latest
+  notify:
+    - nginx systemd
+
+- name: Installing Certbot
+  become: yes
+  apt:
+    name=certbot
+    state=latest
+
+- name: Installing NGINX Plugin For Certbot
+  become: yes
+  apt:
+    name=python3-certbot-nginx
+    state=latest
+
+- name: Remove default available virtualhost symlink
+  file:
+    path: "/etc/nginx/sites-enabled/default"
+    state: absent
+
+- name: Creating NGINX Conf Files For Nodes
+  shell: 'touch /etc/nginx/sites-available/mysql_db01.conf /etc/nginx/sites-available/mysql_db02.conf /etc/nginx/sites-available/wordpress_proxy.conf /etc/nginx/sites-available/gitlab_proxy.conf /etc/nginx/sites-available/grafana_proxy.conf /etc/nginx/sites-available/prometheus_proxy.conf /etc/nginx/sites-available/alertmanager_proxy.conf'
+
+- name: Amend NGINX Conf File For MySQL Master Node
+  become: yes
+  blockinfile:
+       path: /etc/nginx/sites-available/mysql_db01.conf
+       block: |
+         server {
+             listen 80;
+             server_name db01.maxob.ru;
+
+             location / {
+                     proxy_pass http://192.168.101.33:80;
+                     proxy_set_header Host $host;
+                     proxy_set_header X-Real-IP $remote_addr;
+                     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                     proxy_set_header X-Forwarded-Proto $scheme;
+             }
+         }
+
+- name: Link NGINX MySQL Master Node Reverse Proxy
+  become: yes
+  command:
+    cmd: ln -sf /etc/nginx/sites-available/mysql_db01.conf /etc/nginx/sites-enabled/mysql_db01.conf
+
+- name: Amend NGINX Conf File For MySQL Slave Node
+  become: yes
+  blockinfile:
+       path: /etc/nginx/sites-available/mysql_db02.conf
+       block: |
+         server {
+             listen 80;
+             server_name db02.maxob.ru;
+
+             location / {
+                     proxy_pass http://192.168.101.23:80;
+                     proxy_set_header Host $host;
+                     proxy_set_header X-Real-IP $remote_addr;
+                     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                     proxy_set_header X-Forwarded-Proto $scheme;
+             }
+         }
+
+- name: Link NGINX MySQL Slave Node Reverse Proxy
+  become: yes
+  command:
+    cmd: ln -sf /etc/nginx/sites-available/mysql_db02.conf /etc/nginx/sites-enabled/mysql_db02.conf
+
+- name: Amend NGINX Conf File For WordPress
+  become: yes
+  blockinfile:
+       path: /etc/nginx/sites-available/wordpress_proxy.conf
+       block: |
+         server {
+             listen 80;
+             server_name www.maxob.ru;
+                          
+             location / {
+                     proxy_pass http://192.168.101.10;
+                     proxy_http_version 1.1;
+                     proxy_buffering off;
+                     proxy_read_timeout    90;
+                     proxy_connect_timeout 90;
+                     proxy_redirect        off;
+                     proxy_set_header Host $host;
+                     proxy_set_header Upgrade $http_upgrade;
+                     proxy_set_header X-Real-IP $remote_addr;
+                     proxy_set_header X-Forwarded-Proto https;
+                     proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                     proxy_set_header X-Forwarded-Port 443;
+                     proxy_set_header Proxy "";
+             }
+         }
+
+- name: Link NGINX WordPress Reverse Proxy
+  become: yes
+  command:
+    cmd: ln -sf /etc/nginx/sites-available/wordpress_proxy.conf /etc/nginx/sites-enabled/wordpress_proxy.conf
+
+- name: Amend NGINX Conf File For Gitlab
+  become: yes
+  blockinfile:
+       path: /etc/nginx/sites-available/gitlab_proxy.conf
+       block: |
+         server {
+             listen 80;
+             server_name gitlab.maxob.ru;
+            
+             location / {
+                 proxy_pass http://192.168.101.27;
+                 proxy_set_header Host $host;
+                 proxy_set_header X-Real-IP $remote_addr;
+                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                 proxy_set_header X-Forwarded-Proto $scheme;
+             }
+         }
+
+- name: Link NGINX Gitlab Reverse Proxy
+  become: yes
+  command:
+    cmd: ln -sf /etc/nginx/sites-available/gitlab_proxy.conf /etc/nginx/sites-enabled/gitlab_proxy.conf
+
+- name: Amend NGINX Conf File For Grafana
+  become: yes
+  blockinfile:
+       path: /etc/nginx/sites-available/grafana_proxy.conf
+       block: |
+         server {
+             listen 80;
+             server_name grafana.maxob.ru;
+
+             location / {
+                 proxy_pass http://192.168.101.15:3000;
+                 proxy_set_header Host $host;
+                 proxy_set_header X-Real-IP $remote_addr;
+                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                 proxy_set_header X-Forwarded-Proto $scheme;
+             }
+         }
+
+- name: Link NGINX Grafana Reverse Proxy
+  become: yes
+  command:
+    cmd: ln -sf /etc/nginx/sites-available/grafana_proxy.conf /etc/nginx/sites-enabled/grafana_proxy.conf
+
+- name: Amend NGINX Conf File For Prometheus
+  become: yes
+  blockinfile:
+       path: /etc/nginx/sites-available/prometheus_proxy.conf
+       block: |
+         server {
+             listen 80;
+             server_name prometheus.maxob.ru;
+
+             location / {
+                 proxy_pass http://192.168.101.15:9090;
+                 proxy_set_header Host $host;
+                 proxy_set_header X-Real-IP $remote_addr;
+                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                 proxy_set_header X-Forwarded-Proto $scheme;
+             }
+         }
+
+- name: Link NGINX Prometheus Reverse Proxy
+  become: yes
+  command:
+    cmd: ln -sf /etc/nginx/sites-available/prometheus_proxy.conf /etc/nginx/sites-enabled/prometheus_proxy.conf
+
+- name: Amend NGINX Conf File For Alert Manager
+  become: yes
+  blockinfile:
+       path: /etc/nginx/sites-available/alertmanager_proxy.conf
+       block: |
+         server {
+             listen 80;
+             server_name alertmanager.maxob.ru;
+
+             location / {
+                 proxy_pass http://192.168.101.15:9093;
+                 proxy_set_header Host $host;
+                 proxy_set_header X-Real-IP $remote_addr;
+                 proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+                 proxy_set_header X-Forwarded-Proto $scheme;
+             }
+         }
+
+- name: Link NGINX Alert Manager Reverse Proxy
+  become: yes
+  command:
+    cmd: ln -sf /etc/nginx/sites-available/alertmanager_proxy.conf /etc/nginx/sites-enabled/alertmanager_proxy.conf
+
+- name: Restart NGINX service
+  service:
+    name: nginx
+    state: restarted
+
+- name: Getting Certificates With Certbot
+  become: yes
+  command:
+    cmd: certbot --agree-tos -m mobr89@mail.ru --redirect --nginx -d www.maxob.ru -d gitlab.maxob.ru -d grafana.maxob.ru -d prometheus.maxob.ru -d alertmanager.maxob.ru

@@ -1,0 +1,93 @@
+---
+- name: Installing NGINX
+  become: yes
+  apt:
+    name=nginx
+    state=latest
+
+- name: Installing MySQL
+  become: yes
+  apt:
+    name=mysql-client
+    state=latest
+
+- name: Installing PyMySQL
+  become: yes
+  apt:
+    name=python3-pymysql
+    state=latest
+
+- name: Installing PHP-FPM
+  become: yes
+  apt:
+    name=php-fpm
+    state=latest
+
+- name: Installing PHP-MySQL module
+  become: yes
+  apt:
+    name=php-mysql
+    state=latest
+
+- name: Installing PHP Extensions
+  become: yes
+  apt:
+    name:
+      - php-curl
+      - php-gd
+      - php-mbstring
+      - php-xml
+      - php-xmlrpc
+      - php-soap
+      - php-intl
+      - php-zip
+    state: latest
+
+- name: Create document root
+  file:
+    path: "/usr/share/nginx"
+    state: directory
+    owner: www-data
+    group: www-data
+    mode: 0775
+
+- name: Download and unpack latest WordPress
+  unarchive:
+    src: https://wordpress.org/latest.tar.gz
+    dest: "/usr/share/nginx"
+    remote_src: yes
+
+- name: Rename directory
+  command: mv /usr/share/nginx/wordpress /usr/share/nginx/maxob.ru
+
+- name: Set up wp-config
+  template:
+    src: "wp-config.php.j2"
+    dest: "/usr/share/nginx/maxob.ru/wp-config.php"
+    owner: www-data
+    group: www-data
+    mode: 0775
+
+- name: Set ownership and permissions
+  file:
+    path: "/usr/share/nginx/maxob.ru"
+    state: directory
+    recurse: yes
+    owner: www-data
+    group: www-data
+    mode: 0775
+
+- name: Copy NGINX configuration
+  template:
+    src: "nginx.conf.j2"
+    dest: "/etc/nginx/conf.d/maxob.ru.conf"
+
+- name: Restart PHP service
+  service:
+    name: php7.4-fpm
+    state: restarted 
+
+- name: Restart NGINX service
+  service:
+    name: nginx
+    state: restarted

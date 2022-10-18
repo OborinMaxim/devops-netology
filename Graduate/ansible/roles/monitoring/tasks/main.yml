@@ -1,0 +1,59 @@
+---
+- name: Installing Prometheus
+  become: yes
+  apt:
+    name: prometheus
+    state: latest
+
+- name: Copy Prometheus configuration
+  template:
+    src: "prometheus.yml.j2"
+    dest: "/etc/prometheus/prometheus.yml"
+
+- name: Copy AlertManager rules for Prometheus
+  copy:
+    src: "rules.yml"
+    dest: "/etc/prometheus/rules.yml"
+
+- name: Installing AlertManager
+  become: yes
+  apt:
+    name: prometheus-alertmanager
+    state: latest
+
+- name: Starting AlertManager service
+  shell: systemctl start prometheus-alertmanager
+
+- name: Restarting AlertManager service
+  shell: systemctl restart prometheus-alertmanager
+
+- name: Restarting Prometheus service
+  shell: systemctl restart prometheus
+
+- name: Installing Grafana dependencies
+  become: yes
+  apt:
+    name: 
+      - apt-transport-https
+      - software-properties-common
+      - wget
+    state: latest
+
+- name: Adding repository key
+  shell: 'wget -q -O - https://packages.grafana.com/gpg.key | sudo apt-key add -'
+
+- name: Adding repository
+  shell: 'echo "deb https://packages.grafana.com/enterprise/deb stable main" | sudo tee -a /etc/apt/sources.list.d/grafana.list'
+
+- name: Updating cache
+  apt:
+    update_cache: yes
+
+- name: Installing Grafana
+  become: yes
+  apt:
+    name: grafana-enterprise
+    state: latest
+
+- name: Starting Grafana service
+  shell: systemctl start grafana-server

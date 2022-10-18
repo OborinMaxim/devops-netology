@@ -1,0 +1,9 @@
+---
+- name: Installing Node Exporter
+  become: yes
+  apt:
+    name: prometheus-node-exporter
+    state: latest
+
+- name: Starting Node Exporter service
+  shell: systemctl start prometheus-node-exporter

@@ -1,0 +1,20 @@
+---
+- name: Adding the GitLab Runner package repository
+  shell: curl -L "https://packages.gitlab.com/install/repositories/runner/gitlab-runner/script.deb.sh" | sudo bash
+
+- name: Installing GitLab Runner
+  become: yes
+  apt:
+    name: gitlab-runner
+    state: latest
+
+- name: Starting Gitlab Runner service
+  shell: systemctl enable gitlab-runner --now gitlab-runner
+
+- name: Runner registration
+  shell: gitlab-runner register -n --url http://gitlab.maxob.ru --registration-token GR1348941xkcWo4srYy5eJuU4TRLz --executor shell --description "Gitlab Wordpress Runner" --locked false --access-level not_protected
+
+- name: Restart Gitlab Runner service
+  service:
+    name: gitlab-runner
+    state: restarted

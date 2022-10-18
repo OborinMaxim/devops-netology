@@ -1,0 +1,27 @@
+server {
+         listen 80;
+         root /usr/share/nginx/maxob.ru/;
+         index index.php;
+         server_name www.maxob.ru;
+
+         access_log /var/log/nginx/maxob.access.log;
+         error_log /var/log/nginx/maxob.error.log;
+
+         location / {
+                      try_files $uri $uri/ /index.php;
+         }
+
+         location ~ \.php$ {
+                      include snippets/fastcgi-php.conf;
+                      fastcgi_pass unix:/run/php/php7.4-fpm.sock;
+         }
+
+         location ~ /\.ht {
+                      deny all;
+         }
+
+         location ~* \.(js|css|png|jpg|jpeg|gif|ico)$ {
+                      expires max;
+                      log_not_found off;
+         }
+}

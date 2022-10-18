@@ -1,0 +1,108 @@
+---
+- name: Installing MySQL
+  become: yes
+  apt:
+    name=mysql-server
+    state=latest
+  notify:
+    - mysql systemd
+
+- name: Installing MySQLdb
+  become: yes
+  apt:
+    name=python-mysqldb
+    state=latest
+
+- name: Installing PyMySQL
+  become: yes
+  apt:
+    name=python3-pymysql
+    state=latest
+
+- name: Create replica user on master
+  mysql_user:
+    name: replica_user
+    password: password
+    priv: '*.*:REPLICATION SLAVE,REPLICATION CLIENT'
+    state: present
+    host: db02.maxob.ru
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+  when: "mysql_replication_role == 'master'"
+
+- name: Copy master configuration
+  template:
+    src: master.cnf.j2
+    dest: /etc/mysql/mysql.conf.d/mysqld.cnf
+  when: "mysql_replication_role == 'master'"
+
+- name: Restart MySQL service on master
+  service:
+    name: mysql
+    state: restarted
+  when: "mysql_replication_role == 'master'"
+
+- name: Copy replica configuration
+  template:
+    src: slave.cnf.j2
+    dest: /etc/mysql/mysql.conf.d/mysqld.cnf
+  when: "mysql_replication_role == 'slave'"
+
+- name: Restart MySQL service on replica
+  service:
+    name: mysql
+    state: restarted
+  when: "mysql_replication_role == 'slave'"
+
+- name: Stop replica
+  mysql_replication:
+    mode: stopreplica
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+  when: "mysql_replication_role == 'slave'"
+
+- name: Get master binlog file name and binlog position for repica
+  mysql_replication:
+    mode: getprimary
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+  delegate_to: db01.maxob.ru
+  register: master
+  when: "mysql_replication_role == 'slave'"
+
+- name: Configure replication
+  mysql_replication:
+    mode: changeprimary
+    master_host: "db01.maxob.ru"
+    master_user: "replica_user"
+    master_password: password
+    master_log_file: "{{ master.File }}"
+    master_log_pos: "{{ master.Position }}"
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+  when: "mysql_replication_role == 'slave'"
+
+- name: Start replica
+  mysql_replication:
+    mode: startreplica
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+  when: "mysql_replication_role == 'slave'"
+
+- name: Restart MySQL service on replica
+  service:
+    name: mysql
+    state: restarted
+  when: "mysql_replication_role == 'slave'"
+
+- name: Create a database for WordPress
+  mysql_db:
+    name: wordpress
+    state: present
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+  when: "mysql_replication_role == 'master'"
+
+- name: Create database user and its password with all database privileges
+  mysql_user:
+    name: wordpress
+    password: wordpress
+    priv: 'wordpress.*:ALL'
+    state: present
+    host: '%'
+    login_unix_socket: /var/run/mysqld/mysqld.sock
+  when: "mysql_replication_role == 'master'"

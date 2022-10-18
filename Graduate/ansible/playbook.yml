@@ -1,0 +1,105 @@
+---
+- hosts: nginx
+  become:
+    true
+  become_method:
+    sudo
+  become_user:
+    root
+  remote_user:
+    ansible
+  roles:
+    - nginx
+
+  pre_tasks:
+    - name: Updating apt cache for nginx
+      become: yes
+      apt:
+        update_cache=yes
+        cache_valid_time=3600
+
+- hosts: mysql
+  become:
+    true
+  become_method:
+    sudo
+  become_user:
+    root
+  remote_user:
+    ansible
+  roles:
+    - mysql
+
+  pre_tasks:
+    - name: Adding the Ubuntu 18.04 repository and Updating apt cache for mysql
+      become: yes
+      apt_repository:
+        repo: deb http://archive.ubuntu.com/ubuntu bionic main
+        update_cache: yes
+
+- hosts: wordpress
+  become:
+    true
+  become_method:
+    sudo
+  become_user:
+    root
+  remote_user:
+    ansible
+  roles:
+    - wordpress
+
+  pre_tasks:
+    - name: Updating apt cache for wordpress
+      become: yes
+      apt:
+        update_cache=yes
+        cache_valid_time=3600
+
+- hosts: gitlabce
+  become:
+    true
+  become_method:
+    sudo
+  become_user:
+    root
+  remote_user:
+    ansible
+  roles:
+    - gitlab
+
+- hosts: gitlabrunner
+  become:
+    true
+  become_method:
+    sudo
+  become_user:
+    root
+  remote_user:
+    ansible
+  roles:
+    - runner
+
+- hosts: all
+  become:
+    true
+  become_method:
+    sudo
+  become_user:
+    root
+  remote_user:
+    ansible
+  roles:
+    - nodeexp
+
+- hosts: monitoring
+  become:
+    true
+  become_method:
+    sudo 
+  become_user:
+    root
+  remote_user:
+    ansible
+  roles:
+    - monitoring

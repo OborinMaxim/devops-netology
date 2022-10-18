@@ -1,0 +1,6 @@
+---
+- name: mysql systemd
+  systemd:
+    name: mysql
+    enabled: yes
+    state: started

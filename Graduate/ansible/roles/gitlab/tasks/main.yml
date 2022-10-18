@@ -1,0 +1,17 @@
+---
+- name: Installing GitLab dependencies
+  become: yes
+  apt:
+    name:
+      - curl
+      - openssh-server
+      - ca-certificates
+      - tzdata
+      - perl
+    state: latest
+
+- name: Adding the GitLab package repository
+  shell: curl -S https://packages.gitlab.com/install/repositories/gitlab/gitlab-ce/script.deb.sh | bash
+
+- name: Installing the GitLab package
+  shell: EXTERNAL_URL="http://gitlab.maxob.ru" apt-get install gitlab-ce
