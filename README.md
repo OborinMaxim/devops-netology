@@ -1,3 +1,3 @@
-# devops-netology
-hi
-hello
+### Репозиторий с выполненными работами по курсу "DevOps-инженер"  
+- [Домашние задания по блоку "Виртуализация, базы данных и Terraform"](https://github.com/OborinMaxim/devops-netology/blob/Homeworks/Homeworks/README_VIRT.md)  
+- [Дипломная работа "Создание и конфигурирование аппаратно-программных комплексов и систем на платформе облачных сервис-провайдеров"](https://github.com/OborinMaxim/devops-netology/tree/Homeworks/Graduate) 
